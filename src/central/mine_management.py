@@ -42,7 +42,11 @@ class MineManagementGUI:
         # GUI
         self.root = tk.Tk()
         self.root.title("Sistema de Gestão da Mina")
-        self.root.geometry("1200x800")
+        self.root.geometry("1200x900")
+        
+        # Frames condicionais
+        self.manual_frame = None
+        self.auto_frame = None
         
         self._setup_gui()
         
@@ -63,7 +67,7 @@ class MineManagementGUI:
         title.grid(row=0, column=0, columnspan=2, pady=10)
         
         # Canvas para mapa
-        self.canvas = tk.Canvas(main_frame, width=800, height=600, bg='#2a2a2a')
+        self.canvas = tk.Canvas(main_frame, width=800, height=500, bg='#2a2a2a')
         self.canvas.grid(row=1, column=0, padx=5, pady=5)
         
         # Frame de controle
@@ -71,14 +75,14 @@ class MineManagementGUI:
         control_frame.grid(row=1, column=1, padx=5, pady=5, sticky=(tk.N, tk.W, tk.E))
         
         # Lista de caminhões
-        ttk.Label(control_frame, text="Caminhões Ativos:").grid(row=0, column=0, pady=5)
-        self.truck_listbox = tk.Listbox(control_frame, height=10, width=30)
-        self.truck_listbox.grid(row=1, column=0, pady=5)
+        ttk.Label(control_frame, text="Caminhões Ativos:").grid(row=0, column=0, pady=2)
+        self.truck_listbox = tk.Listbox(control_frame, height=6, width=30)
+        self.truck_listbox.grid(row=1, column=0, pady=2)
         self.truck_listbox.bind('<<ListboxSelect>>', self._on_truck_select)
         
         # Informações do caminhão selecionado
-        info_frame = ttk.LabelFrame(control_frame, text="Informações", padding="10")
-        info_frame.grid(row=2, column=0, pady=10, sticky=(tk.W, tk.E))
+        info_frame = ttk.LabelFrame(control_frame, text="Informações", padding="5")
+        info_frame.grid(row=2, column=0, pady=3, sticky=(tk.W, tk.E))
         
         self.info_labels = {}
         labels = ['Status:', 'Modo:', 'Posição:', 'Velocidade:', 'Temperatura:']
@@ -88,26 +92,63 @@ class MineManagementGUI:
             self.info_labels[label].grid(row=i, column=1, sticky=tk.W, padx=5)
         
         # Controles
-        cmd_frame = ttk.LabelFrame(control_frame, text="Comandos", padding="10")
-        cmd_frame.grid(row=3, column=0, pady=10, sticky=(tk.W, tk.E))
+        cmd_frame = ttk.LabelFrame(control_frame, text="Comandos", padding="5")
+        cmd_frame.grid(row=3, column=0, pady=3, sticky=(tk.W, tk.E))
         
-        ttk.Button(cmd_frame, text="Ativar Automático", 
+        ttk.Button(cmd_frame, text="Modo Automático", 
                   command=self._send_auto_command).grid(row=0, column=0, pady=2, sticky=tk.W+tk.E)
         ttk.Button(cmd_frame, text="Modo Manual", 
                   command=self._send_manual_command).grid(row=1, column=0, pady=2, sticky=tk.W+tk.E)
         ttk.Button(cmd_frame, text="Emergência", 
                   command=self._send_emergency).grid(row=2, column=0, pady=2, sticky=tk.W+tk.E)
         
-        # Setpoint
-        setpoint_frame = ttk.LabelFrame(control_frame, text="Setpoint", padding="10")
-        setpoint_frame.grid(row=4, column=0, pady=10, sticky=(tk.W, tk.E))
+        # Controle Manual (inicialmente oculto)
+        self.manual_frame = ttk.LabelFrame(control_frame, text="Controle Manual", padding="5")
         
-        ttk.Label(setpoint_frame, text="Velocidade (m/s):").grid(row=0, column=0, sticky=tk.W)
-        self.velocity_entry = ttk.Entry(setpoint_frame, width=10)
-        self.velocity_entry.grid(row=0, column=1, padx=5)
+        # Direcionais
+        ttk.Button(self.manual_frame, text="↑ Frente", width=12,
+                  command=self._send_forward).grid(row=0, column=1, pady=2)
+        ttk.Button(self.manual_frame, text="← Esquerda", width=12,
+                  command=self._send_left).grid(row=1, column=0, padx=2)
+        ttk.Button(self.manual_frame, text="→ Direita", width=12,
+                  command=self._send_right).grid(row=1, column=2, padx=2)
+        ttk.Button(self.manual_frame, text="↓ Ré", width=12,
+                  command=self._send_backward).grid(row=2, column=1, pady=2)
         
-        ttk.Button(setpoint_frame, text="Enviar", 
-                  command=self._send_setpoint).grid(row=1, column=0, columnspan=2, pady=5)
+        # Aceleração/Freio
+        accel_frame = ttk.Frame(self.manual_frame)
+        accel_frame.grid(row=3, column=0, columnspan=3, pady=5)
+        ttk.Button(accel_frame, text="⚡ Acelerar", width=12,
+                  command=self._send_accelerate).grid(row=0, column=0, padx=2)
+        ttk.Button(accel_frame, text="🛑 Freiar", width=12,
+                  command=self._send_brake).grid(row=0, column=1, padx=2)
+        
+        # Modo Automático - Waypoints (inicialmente oculto)
+        self.auto_frame = ttk.LabelFrame(control_frame, text="Modo Automático - Waypoints", padding="5")
+        
+        # Lista de waypoints
+        ttk.Label(self.auto_frame, text="Waypoints:").grid(row=0, column=0, columnspan=2, sticky=tk.W)
+        self.waypoints_listbox = tk.Listbox(self.auto_frame, height=4, width=25)
+        self.waypoints_listbox.grid(row=1, column=0, columnspan=2, pady=2, rowspan=2)
+        
+        # Adicionar waypoint (ao lado)
+        ttk.Label(self.auto_frame, text="X (m):").grid(row=1, column=2, sticky=tk.W, padx=(10,2))
+        self.waypoint_x_entry = ttk.Entry(self.auto_frame, width=8)
+        self.waypoint_x_entry.grid(row=1, column=3, padx=2)
+        
+        ttk.Label(self.auto_frame, text="Y (m):").grid(row=2, column=2, sticky=tk.W, padx=(10,2))
+        self.waypoint_y_entry = ttk.Entry(self.auto_frame, width=8)
+        self.waypoint_y_entry.grid(row=2, column=3, padx=2)
+        
+        ttk.Button(self.auto_frame, text="➕ Adicionar", 
+                  command=self._add_waypoint).grid(row=3, column=0, pady=5, sticky=tk.W+tk.E)
+        ttk.Button(self.auto_frame, text="❌ Remover", 
+                  command=self._remove_waypoint).grid(row=3, column=1, pady=5, sticky=tk.W+tk.E)
+        ttk.Button(self.auto_frame, text="🚀 Enviar Rota", 
+                  command=self._send_route).grid(row=4, column=0, columnspan=4, pady=5, sticky=tk.W+tk.E)
+        
+        # Lista interna de waypoints
+        self.waypoints = []
         
         # Status bar
         self.status_bar = ttk.Label(self.root, text="Aguardando conexão MQTT...", 
@@ -178,8 +219,8 @@ class MineManagementGUI:
         """Desenha grade no mapa"""
         # Grade de 100x100m, cada célula = 10m
         for i in range(0, 800, 80):  # 10 células
-            self.canvas.create_line(i, 0, i, 600, fill='#3a3a3a')
-            self.canvas.create_line(0, i*0.75, 800, i*0.75, fill='#3a3a3a')
+            self.canvas.create_line(i, 0, i, 500, fill='#3a3a3a')
+            self.canvas.create_line(0, i*0.625, 800, i*0.625, fill='#3a3a3a')
         
         # Legenda
         self.canvas.create_text(400, 10, text="Mapa da Mina (100m x 75m)", 
@@ -212,6 +253,9 @@ class MineManagementGUI:
         # Atualiza mapa
         self._draw_trucks()
         
+        # Atualiza informações do caminhão selecionado
+        self._update_selected_truck_info()
+        
         # Agenda próxima atualização
         self.root.after(500, self._update_display)
     
@@ -227,9 +271,10 @@ class MineManagementGUI:
             y = data.get('y', 0)
             theta = data.get('theta', 0)  # Orientação em radianos
             
-            # Converte coordenadas (0-100m) para pixels (0-800)
+            # Converte coordenadas (0-100m) para pixels (0-800 x 0-500)
+            # 100m x 75m -> 800px x 500px (aproximado)
             px = x * 8
-            py = y * 8
+            py = y * 6.67  # Ajustado para altura de 500px
             
             # Cor baseada no status
             status = data.get('status', 'UNKNOWN')
@@ -288,6 +333,38 @@ class MineManagementGUI:
             self.info_labels['Posição:'].config(text=f"({x:.1f}, {y:.1f})")
             self.info_labels['Velocidade:'].config(text=f"{data.get('velocity', 0):.1f} m/s")
             self.info_labels['Temperatura:'].config(text=f"{data.get('temperature', 0):.1f}°C")
+            
+            # Mostra/oculta controles baseado no modo
+            self._update_control_visibility(data.get('mode', '-'))
+    
+    def _update_selected_truck_info(self):
+        """Atualiza informações do caminhão selecionado"""
+        if self.selected_truck_id and self.selected_truck_id in self.trucks:
+            data = self.trucks[self.selected_truck_id]
+            self.info_labels['Status:'].config(text=data.get('status', '-'))
+            self.info_labels['Modo:'].config(text=data.get('mode', '-'))
+            x = data.get('x', 0)
+            y = data.get('y', 0)
+            self.info_labels['Posição:'].config(text=f"({x:.1f}, {y:.1f})")
+            self.info_labels['Velocidade:'].config(text=f"{data.get('velocity', 0):.1f} m/s")
+            self.info_labels['Temperatura:'].config(text=f"{data.get('temperature', 0):.1f}°C")
+    
+    def _update_control_visibility(self, mode: str):
+        """Mostra/oculta controles baseado no modo do caminhão"""
+        if mode == 'MANUAL':
+            # Mostra controle manual
+            self.manual_frame.grid(row=4, column=0, pady=10, sticky=(tk.W, tk.E))
+            # Oculta controle automático
+            self.auto_frame.grid_remove()
+        elif mode == 'AUTOMATIC':
+            # Oculta controle manual
+            self.manual_frame.grid_remove()
+            # Mostra controle automático
+            self.auto_frame.grid(row=4, column=0, pady=10, sticky=(tk.W, tk.E))
+        else:
+            # Oculta ambos se modo desconhecido
+            self.manual_frame.grid_remove()
+            self.auto_frame.grid_remove()
     
     def _get_selected_truck_id(self) -> int:
         """Retorna ID do caminhão selecionado"""
@@ -304,6 +381,8 @@ class MineManagementGUI:
             payload = json.dumps({"type": "ENABLE_AUTOMATIC"})
             self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
             self.status_bar.config(text=f"✓ Modo AUTOMÁTICO enviado para caminhão {truck_id}")
+            # Atualiza visibilidade dos controles
+            self._update_control_visibility('AUTOMATIC')
     
     def _send_manual_command(self):
         """Envia comando para modo manual"""
@@ -315,6 +394,8 @@ class MineManagementGUI:
             payload = json.dumps({"type": "DISABLE_AUTOMATIC"})
             self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
             self.status_bar.config(text=f"✓ Modo MANUAL enviado para caminhão {truck_id}")
+            # Atualiza visibilidade dos controles
+            self._update_control_visibility('MANUAL')
     
     def _send_emergency(self):
         """Envia comando de emergência"""
@@ -343,6 +424,122 @@ class MineManagementGUI:
             self.status_bar.config(text=f"Setpoint enviado para caminhão {truck_id}")
         except ValueError:
             self.status_bar.config(text="Erro: velocidade inválida")
+    
+    def _send_forward(self):
+        """Envia comando para frente"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "MOVE_FORWARD"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando FRENTE enviado")
+    
+    def _send_backward(self):
+        """Envia comando para ré"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "MOVE_BACKWARD"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando RÉ enviado")
+    
+    def _send_left(self):
+        """Envia comando para esquerda"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "TURN_LEFT"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando ESQUERDA enviado")
+    
+    def _send_right(self):
+        """Envia comando para direita"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "TURN_RIGHT"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando DIREITA enviado")
+    
+    def _send_accelerate(self):
+        """Envia comando para acelerar"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "ACCELERATE"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando ACELERAR enviado")
+    
+    def _send_brake(self):
+        """Envia comando para freiar"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        if self.mqtt_client:
+            payload = json.dumps({"type": "BRAKE"})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/command", payload, qos=1)
+            self.status_bar.config(text=f"✓ Comando FREIAR enviado")
+    
+    def _add_waypoint(self):
+        """Adiciona waypoint à lista"""
+        try:
+            x = float(self.waypoint_x_entry.get())
+            y = float(self.waypoint_y_entry.get())
+            
+            # Valida limites do mapa
+            if not (0 <= x <= 100 and 0 <= y <= 75):
+                self.status_bar.config(text="⚠ Waypoint fora dos limites (0-100m, 0-75m)")
+                return
+            
+            self.waypoints.append([x, y])
+            self.waypoints_listbox.insert(tk.END, f"({x:.1f}, {y:.1f})")
+            
+            # Limpa campos
+            self.waypoint_x_entry.delete(0, tk.END)
+            self.waypoint_y_entry.delete(0, tk.END)
+            
+            self.status_bar.config(text=f"✓ Waypoint adicionado: ({x:.1f}, {y:.1f})")
+        except ValueError:
+            self.status_bar.config(text="⚠ Valores inválidos para waypoint")
+    
+    def _remove_waypoint(self):
+        """Remove waypoint selecionado"""
+        selection = self.waypoints_listbox.curselection()
+        if not selection:
+            self.status_bar.config(text="⚠ Selecione um waypoint para remover")
+            return
+        
+        index = selection[0]
+        self.waypoints.pop(index)
+        self.waypoints_listbox.delete(index)
+        self.status_bar.config(text="✓ Waypoint removido")
+    
+    def _send_route(self):
+        """Envia rota completa com waypoints"""
+        truck_id = self._get_selected_truck_id()
+        if not truck_id:
+            self.status_bar.config(text="⚠ Selecione um caminhão primeiro")
+            return
+        
+        if not self.waypoints:
+            self.status_bar.config(text="⚠ Adicione waypoints antes de enviar rota")
+            return
+        
+        if self.mqtt_client:
+            payload = json.dumps({"waypoints": self.waypoints})
+            self.mqtt_client.publish(f"mine/truck/{truck_id}/route", payload, qos=1)
+            self.status_bar.config(text=f"✓ Rota com {len(self.waypoints)} waypoints enviada")
     
     def run(self):
         """Inicia a interface"""
