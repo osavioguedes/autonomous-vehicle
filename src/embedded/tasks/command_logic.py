@@ -107,16 +107,20 @@ class CommandLogicTask(threading.Thread):
         print(f"[{self.name}] Executando comando: {command}")
         
         if command.command_type == CommandType.ENABLE_AUTOMATIC:
-            # Ativa modo automático
+            # Ativa modo automático e para o veículo
             self.shared_state.set_mode(OperationMode.AUTOMATIC_REMOTE)
+            self.shared_state.set_actuators(0.0, 0.0)  # Para o veículo
+            self.shared_state.set_setpoints(0.0, 0.0)  # Zera setpoints
             self.event_manager.emit(EventType.MODE_CHANGED, {"mode": "AUTOMATIC"})
-            print(f"[{self.name}] Modo AUTOMÁTICO ativado")
+            print(f"[{self.name}] Modo AUTOMÁTICO ativado - veículo parado")
         
         elif command.command_type == CommandType.DISABLE_AUTOMATIC:
-            # Volta para modo manual
+            # Volta para modo manual e para o veículo
             self.shared_state.set_mode(OperationMode.MANUAL_LOCAL)
+            self.shared_state.set_actuators(0.0, 0.0)  # Para o veículo
+            self.shared_state.set_setpoints(0.0, 0.0)  # Zera setpoints
             self.event_manager.emit(EventType.MODE_CHANGED, {"mode": "MANUAL"})
-            print(f"[{self.name}] Modo MANUAL ativado")
+            print(f"[{self.name}] Modo MANUAL ativado - veículo parado")
         
         elif command.command_type == CommandType.EMERGENCY_STOP:
             # Parada de emergência
@@ -155,6 +159,20 @@ class CommandLogicTask(threading.Thread):
             elif command.command_type == CommandType.STEER_RIGHT:
                 accel, _ = self.shared_state.get_actuators()
                 self.shared_state.set_actuators(accel, command.value or -0.5)
+            elif command.command_type == CommandType.MOVE_FORWARD:
+                self.shared_state.set_actuators(command.value or 0.5, 0.0)
+                print(f"[{self.name}] Movendo para frente")
+            elif command.command_type == CommandType.MOVE_BACKWARD:
+                self.shared_state.set_actuators(command.value or -0.5, 0.0)
+                print(f"[{self.name}] Movendo para trás")
+            elif command.command_type == CommandType.TURN_LEFT:
+                accel, _ = self.shared_state.get_actuators()
+                self.shared_state.set_actuators(accel, command.value or 0.5)
+                print(f"[{self.name}] Girando à esquerda")
+            elif command.command_type == CommandType.TURN_RIGHT:
+                accel, _ = self.shared_state.get_actuators()
+                self.shared_state.set_actuators(accel, command.value or -0.5)
+                print(f"[{self.name}] Girando à direita")
     
     def _update_vehicle_status(self):
         """Atualiza status do veículo baseado em falhas e movimento"""

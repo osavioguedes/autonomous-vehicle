@@ -22,6 +22,10 @@ class CommandType(Enum):
     BRAKE = auto()  # Frear
     STEER_LEFT = auto()  # Virar à esquerda
     STEER_RIGHT = auto()  # Virar à direita
+    MOVE_FORWARD = auto()  # Mover para frente
+    MOVE_BACKWARD = auto()  # Mover para trás
+    TURN_LEFT = auto()  # Girar à esquerda
+    TURN_RIGHT = auto()  # Girar à direita
     STOP = auto()  # Parar
     
     # Emergência

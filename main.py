@@ -230,7 +230,13 @@ class EmbeddedSystem:
                 'EMERGENCY_STOP': CommandType.EMERGENCY_STOP,
                 'RESET': CommandType.RESET_EMERGENCY,
                 'RESET_EMERGENCY': CommandType.RESET_EMERGENCY,
-                'STOP': CommandType.STOP
+                'STOP': CommandType.STOP,
+                'MOVE_FORWARD': CommandType.MOVE_FORWARD,
+                'MOVE_BACKWARD': CommandType.MOVE_BACKWARD,
+                'TURN_LEFT': CommandType.TURN_LEFT,
+                'TURN_RIGHT': CommandType.TURN_RIGHT,
+                'ACCELERATE': CommandType.ACCELERATE,
+                'BRAKE': CommandType.BRAKE
             }
             
             if cmd_type_str in cmd_map:
