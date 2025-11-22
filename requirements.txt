@@ -1,0 +1,17 @@
+# Dependências do Sistema de Controle de Veículo Autônomo de Mineração
+
+# Core
+numpy>=1.21.0
+
+# Visualização
+matplotlib>=3.5.0
+
+# Comunicação MQTT
+paho-mqtt>=1.6.0
+
+# Interface Gráfica (já incluído no Python)
+# tkinter - Built-in
+
+# Opcional - Para interface melhorada
+# keyboard>=0.13.5  # Entrada de teclado não-bloqueante
+# pynput>=1.7.6     # Alternativa para entrada
