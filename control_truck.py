@@ -18,10 +18,11 @@ def print_menu():
     print("  [2] Ativar modo MANUAL")
     print("  [3] Parada de EMERGÊNCIA")
     print("  [4] Reset emergência")
-    print("  [5] Definir VELOCIDADE setpoint")
-    print("  [6] Definir ROTA (waypoints)")
-    print("  [7] Parar caminhão")
-    print("  [8] Ver status")
+    print("  [5] REARMAR sistema (limpar falhas)")
+    print("  [6] Definir VELOCIDADE setpoint")
+    print("  [7] Definir ROTA (waypoints)")
+    print("  [8] Parar caminhão")
+    print("  [9] Ver status")
     print("  [0] Sair")
     print("="*60)
 
@@ -145,13 +146,18 @@ def main():
                 show_status()
             
             elif choice == '5':
+                send_command(client, truck_id, "RESET_FAULT")
+                time.sleep(0.5)
+                show_status()
+            
+            elif choice == '6':
                 try:
                     vel = float(input("Digite a velocidade desejada (m/s): "))
                     send_setpoint(client, truck_id, vel)
                 except ValueError:
                     print("✗ Valor inválido")
             
-            elif choice == '6':
+            elif choice == '7':
                 print("\nDefina waypoints (X Y, separados por vírgula)")
                 print("Exemplo: 10 10, 20 20, 30 30")
                 try:
@@ -164,11 +170,11 @@ def main():
                 except:
                     print("✗ Formato inválido")
             
-            elif choice == '7':
+            elif choice == '8':
                 send_setpoint(client, truck_id, 0.0)
                 print("✓ Comando de parada enviado (velocidade = 0)")
             
-            elif choice == '8':
+            elif choice == '9':
                 show_status()
             
             else:
