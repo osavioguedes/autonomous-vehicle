@@ -1,8 +1,3 @@
-"""
-Controlador Interativo do Caminhão via MQTT
-Envia comandos para o caminhão através de MQTT
-"""
-
 import sys
 try:
     import paho.mqtt.client as mqtt
@@ -15,7 +10,6 @@ import json
 import time
 
 def print_menu():
-    """Imprime menu de comandos"""
     print("\n" + "="*60)
     print("CONTROLADOR DO CAMINHÃO VIA MQTT".center(60))
     print("="*60)
@@ -32,34 +26,29 @@ def print_menu():
     print("="*60)
 
 def send_command(client, truck_id, command):
-    """Envia comando para o caminhão"""
     topic = f"mine/truck/{truck_id}/command"
     payload = json.dumps({"type": command})
     client.publish(topic, payload, qos=1)
     print(f"✓ Comando '{command}' enviado para caminhão {truck_id}")
 
 def send_setpoint(client, truck_id, velocity, angular=0.0):
-    """Envia setpoint de velocidade"""
     topic = f"mine/truck/{truck_id}/setpoint"
     payload = json.dumps({"velocity": velocity, "angular": angular})
     client.publish(topic, payload, qos=1)
     print(f"✓ Setpoint enviado: velocidade={velocity} m/s")
 
 def send_route(client, truck_id, waypoints):
-    """Envia rota com waypoints"""
     topic = f"mine/truck/{truck_id}/route"
     payload = json.dumps({"waypoints": waypoints})
     client.publish(topic, payload, qos=1)
     print(f"✓ Rota enviada com {len(waypoints)} waypoints")
 
-# Estado do caminhão (recebido via MQTT)
 truck_state = {}
 
 def on_connect(client, userdata, flags, rc, properties=None):
-    """Callback de conexão"""
     if rc == 0:
         print("\n✓ Conectado ao broker MQTT")
-        # Subscreve ao estado do caminhão
+
         truck_id = userdata
         client.subscribe(f"mine/truck/{truck_id}/state", qos=1)
         print(f"✓ Inscrito no estado do caminhão {truck_id}")
@@ -67,7 +56,6 @@ def on_connect(client, userdata, flags, rc, properties=None):
         print(f"\n✗ Falha na conexão (código {rc})")
 
 def on_message(client, userdata, msg):
-    """Callback de mensagem recebida"""
     global truck_state
     try:
         truck_state = json.loads(msg.payload.decode('utf-8'))
@@ -75,7 +63,6 @@ def on_message(client, userdata, msg):
         pass
 
 def show_status():
-    """Mostra status do caminhão"""
     if not truck_state:
         print("\n⚠ Nenhum dado recebido do caminhão ainda")
         return
@@ -96,8 +83,7 @@ def show_status():
     print("-"*60)
 
 def main():
-    """Função principal"""
-    # Argumentos
+
     truck_id = int(sys.argv[1]) if len(sys.argv) > 1 else 1
     broker = sys.argv[2] if len(sys.argv) > 2 else "localhost"
     
@@ -106,7 +92,6 @@ def main():
     print(f"Broker: {broker}".center(60))
     print("="*60)
     
-    # Cria cliente MQTT
     try:
         client = mqtt.Client(
             client_id=f"controller_{truck_id}",
@@ -123,14 +108,13 @@ def main():
         print("\nConectando ao broker MQTT...")
         client.connect(broker, 1883, 60)
         client.loop_start()
-        time.sleep(1)  # Aguarda conexão
+        time.sleep(1)
     except Exception as e:
         print(f"\n✗ Erro ao conectar: {e}")
         print("\nVerifique se o broker MQTT está rodando:")
         print("  mosquitto")
         sys.exit(1)
     
-    # Loop principal
     try:
         while True:
             print_menu()

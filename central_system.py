@@ -1,8 +1,3 @@
-"""
-Sistema Central de Gestão da Mina
-Ponto de entrada para interface gráfica
-"""
-
 import sys
 from src.central.mine_management import main
 

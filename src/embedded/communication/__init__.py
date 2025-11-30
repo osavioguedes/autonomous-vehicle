@@ -1,1 +1,0 @@
-"""Comunicação IPC e MQTT"""

@@ -1,1 +1,0 @@
-"""Sistema embarcado no caminhão"""
