@@ -45,9 +45,9 @@ class NavigationControlTask(threading.Thread):
                 
                 self._prev_mode_automatic = state.is_automatic()
                 
-                if state.is_automatic() and state.status != VehicleStatus.EMERGENCY:
+                if state.is_automatic() and state.status not in [VehicleStatus.EMERGENCY, VehicleStatus.FAULT]:
                     self._execute_control(state)
-                elif state.is_manual():
+                elif state.is_manual() and state.status != VehicleStatus.FAULT:
 
                     self.shared_state.set_setpoints(state.velocity, state.theta)
                 
@@ -88,6 +88,18 @@ class NavigationControlTask(threading.Thread):
         event = self.event_manager.check_event(EventType.EMERGENCY_STOP)
         if event:
             print(f"[{self.name}] Emergência detectada - parando controle")
+            self._disable_controllers()
+            self.shared_state.set_actuators(0.0, 0.0)
+        
+        event = self.event_manager.check_event(EventType.ELECTRICAL_FAULT)
+        if event:
+            print(f"[{self.name}] Falha elétrica detectada - parando controle")
+            self._disable_controllers()
+            self.shared_state.set_actuators(0.0, 0.0)
+        
+        event = self.event_manager.check_event(EventType.HYDRAULIC_FAULT)
+        if event:
+            print(f"[{self.name}] Falha hidráulica detectada - parando controle")
             self._disable_controllers()
             self.shared_state.set_actuators(0.0, 0.0)
     
